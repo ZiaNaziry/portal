@@ -88,7 +88,7 @@ export default function Home() {
         dir="ltr"
       >
         <div className="font-bold text-lg" style={{ color: "var(--text-primary)" }}>
-          Ahmad Zia Naziry
+          Muslim Utilities
         </div>
         <div className="flex items-center gap-2">
           {/* Theme dropdown */}
