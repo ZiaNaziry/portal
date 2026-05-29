@@ -11,15 +11,33 @@ export default function Home() {
   const [themeOpen, setThemeOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const particlesRef = useRef<HTMLCanvasElement>(null);
+  const langRef = useRef<HTMLDivElement>(null);
+  const themeRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click
+  useEffect(function () {
+    function handleClick(e: MouseEvent) {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false);
+      }
+      if (themeRef.current && !themeRef.current.contains(e.target as Node)) {
+        setThemeOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return function () { document.removeEventListener("mousedown", handleClick); };
+  }, []);
 
   useEffect(function () {
     const saved = localStorage.getItem("portal-theme") as Theme | null;
-    if (saved && ["light", "dark", "emerald"].includes(saved)) {
+    if (saved && ["light", "dark", "emerald"].indexOf(saved) !== -1) {
       setTheme(saved);
       document.documentElement.setAttribute("data-theme", saved);
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
     }
     const savedLang = localStorage.getItem("portal-lang") as Language | null;
-    if (savedLang && ["en", "ar", "fa"].includes(savedLang)) {
+    if (savedLang && ["en", "ar", "fa"].indexOf(savedLang) !== -1) {
       setLang(savedLang);
       document.documentElement.setAttribute("dir", savedLang === "en" ? "ltr" : "rtl");
       document.documentElement.setAttribute("lang", savedLang);
@@ -71,7 +89,8 @@ export default function Home() {
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2563eb";
-      for (const p of particles) {
+      for (let j = 0; j < particles.length; j++) {
+        const p = particles[j];
         p.x += p.vx;
         p.y += p.vy;
         if (p.x < 0) p.x = canvas.width;
@@ -96,7 +115,7 @@ export default function Home() {
   }, [theme]);
 
   const isRtl = lang !== "en";
-  const langLabels: Record<Language, string> = { en: "English", ar: "العربية", fa: "فارسی" };
+  const langLabels: Record<Language, string> = { en: "English", ar: "\u0627\u0644\u0639\u0631\u0628\u064A\u0629", fa: "\u0641\u0627\u0631\u0633\u06CC" };
   const themeLabels: { key: Theme; label: string; color: string }[] = [
     { key: "light", label: t("theme.light", lang), color: "#f8fafc" },
     { key: "dark", label: t("theme.dark", lang), color: "#1e293b" },
@@ -177,7 +196,7 @@ export default function Home() {
 
       {/* Navbar */}
       <nav
-        className="flex items-center justify-between px-4 sm:px-8 py-3 relative z-10"
+        className="flex items-center justify-between px-4 sm:px-8 py-3 relative z-50"
         style={{
           background: "var(--bg-secondary)",
           borderBottom: "1px solid var(--border)",
@@ -205,7 +224,7 @@ export default function Home() {
           }}
         >
           {/* Language dropdown */}
-          <div className="relative">
+          <div className="relative" ref={langRef}>
             <button
               onClick={function () { setLangOpen(!langOpen); setThemeOpen(false); }}
               className="h-9 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all hover:scale-105 text-xs font-semibold"
@@ -221,8 +240,8 @@ export default function Home() {
             </button>
             {langOpen && (
               <div
-                className="absolute right-0 top-11 rounded-xl py-1 z-50 min-w-[130px] overflow-hidden animate-dropdown"
-                style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--card-shadow)" }}
+                className="absolute right-0 top-11 rounded-xl py-1 min-w-[130px] overflow-hidden animate-dropdown"
+                style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "0 10px 40px rgba(0,0,0,0.15)" }}
               >
                 {(["en", "ar", "fa"] as Language[]).map(function (l) {
                   return (
@@ -245,7 +264,7 @@ export default function Home() {
           </div>
 
           {/* Theme dropdown */}
-          <div className="relative">
+          <div className="relative" ref={themeRef}>
             <button
               onClick={function () { setThemeOpen(!themeOpen); setLangOpen(false); }}
               className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-110"
@@ -262,8 +281,8 @@ export default function Home() {
             </button>
             {themeOpen && (
               <div
-                className="absolute right-0 top-11 rounded-xl py-1 z-50 min-w-[130px] overflow-hidden animate-dropdown"
-                style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--card-shadow)" }}
+                className="absolute right-0 top-11 rounded-xl py-1 min-w-[130px] overflow-hidden animate-dropdown"
+                style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "0 10px 40px rgba(0,0,0,0.15)" }}
               >
                 {themeLabels.map(function (item) {
                   return (
@@ -293,11 +312,6 @@ export default function Home() {
           </div>
         </div>
       </nav>
-
-      {/* Close dropdowns on click outside */}
-      {(themeOpen || langOpen) && (
-        <div className="fixed inset-0 z-40" onClick={function () { setThemeOpen(false); setLangOpen(false); }} />
-      )}
 
       {/* Main content */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8 py-16 relative z-10">
