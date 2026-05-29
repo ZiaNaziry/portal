@@ -16,10 +16,13 @@ export default function Home() {
     const saved = localStorage.getItem("portal-theme") as Theme | null;
     if (saved && ["light", "dark", "emerald"].includes(saved)) {
       setTheme(saved);
+      document.documentElement.setAttribute("data-theme", saved);
     }
     const savedLang = localStorage.getItem("portal-lang") as Language | null;
     if (savedLang && ["en", "ar", "fa"].includes(savedLang)) {
       setLang(savedLang);
+      document.documentElement.setAttribute("dir", savedLang === "en" ? "ltr" : "rtl");
+      document.documentElement.setAttribute("lang", savedLang);
     }
     setTimeout(function () { setMounted(true); }, 50);
   }, []);
@@ -94,11 +97,12 @@ export default function Home() {
 
   const isRtl = lang !== "en";
   const langLabels: Record<Language, string> = { en: "English", ar: "العربية", fa: "فارسی" };
-  const themeLabels: { key: Theme; label: string }[] = [
-    { key: "light", label: t("theme.light", lang) },
-    { key: "dark", label: t("theme.dark", lang) },
-    { key: "emerald", label: t("theme.emerald", lang) },
+  const themeLabels: { key: Theme; label: string; color: string }[] = [
+    { key: "light", label: t("theme.light", lang), color: "#f8fafc" },
+    { key: "dark", label: t("theme.dark", lang), color: "#1e293b" },
+    { key: "emerald", label: t("theme.emerald", lang), color: "#064e3b" },
   ];
+  const themeBorders: Record<string, string> = { light: "#cbd5e1", dark: "#475569", emerald: "#10b981" };
 
   function handleTheme(th: Theme) {
     setTheme(th);
@@ -200,15 +204,55 @@ export default function Home() {
             transition: "all 0.5s ease 0.1s",
           }}
         >
+          {/* Language dropdown */}
+          <div className="relative">
+            <button
+              onClick={function () { setLangOpen(!langOpen); setThemeOpen(false); }}
+              className="h-9 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all hover:scale-105 text-xs font-semibold"
+              style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}
+              aria-label="Change language"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+              </svg>
+              {langLabels[lang]}
+            </button>
+            {langOpen && (
+              <div
+                className="absolute right-0 top-11 rounded-xl py-1 z-50 min-w-[130px] overflow-hidden animate-dropdown"
+                style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--card-shadow)" }}
+              >
+                {(["en", "ar", "fa"] as Language[]).map(function (l) {
+                  return (
+                    <button
+                      key={l}
+                      onClick={function () { handleLang(l); }}
+                      className="w-full text-left px-4 py-2.5 text-sm transition-colors"
+                      style={{
+                        color: lang === l ? "var(--accent)" : "var(--text-primary)",
+                        background: lang === l ? "var(--bg-secondary)" : "transparent",
+                        fontWeight: lang === l ? 600 : 400,
+                      }}
+                    >
+                      {langLabels[l]}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Theme dropdown */}
           <div className="relative">
             <button
               onClick={function () { setThemeOpen(!themeOpen); setLangOpen(false); }}
-              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-110"
               style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
               aria-label="Change theme"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-primary)" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-secondary)" }}>
                 <circle cx="12" cy="12" r="5" />
                 <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
                 <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
@@ -236,50 +280,11 @@ export default function Home() {
                       <span
                         className="w-3 h-3 rounded-full"
                         style={{
-                          background: item.key === "light" ? "#f8fafc" : item.key === "dark" ? "#1e293b" : "#064e3b",
-                          border: "2px solid " + (item.key === "light" ? "#cbd5e1" : item.key === "dark" ? "#475569" : "#10b981"),
+                          background: item.color,
+                          border: "2px solid " + (themeBorders[item.key] || "#cbd5e1"),
                         }}
                       />
                       {item.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Language dropdown */}
-          <div className="relative">
-            <button
-              onClick={function () { setLangOpen(!langOpen); setThemeOpen(false); }}
-              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
-              style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
-              aria-label="Change language"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-primary)" }}>
-                <circle cx="12" cy="12" r="10" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-              </svg>
-            </button>
-            {langOpen && (
-              <div
-                className="absolute right-0 top-11 rounded-xl py-1 z-50 min-w-[130px] overflow-hidden animate-dropdown"
-                style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--card-shadow)" }}
-              >
-                {(["en", "ar", "fa"] as Language[]).map(function (l) {
-                  return (
-                    <button
-                      key={l}
-                      onClick={function () { handleLang(l); }}
-                      className="w-full text-left px-4 py-2.5 text-sm transition-colors"
-                      style={{
-                        color: lang === l ? "var(--accent)" : "var(--text-primary)",
-                        background: lang === l ? "var(--bg-secondary)" : "transparent",
-                        fontWeight: lang === l ? 600 : 400,
-                      }}
-                    >
-                      {langLabels[l]}
                     </button>
                   );
                 })}
